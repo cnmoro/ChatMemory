@@ -1,0 +1,8 @@
+mongita
+logzero
+sumy
+langdetect
+openai==1.12.0
+minivectordb
+text-util-en-pt
+numpy
