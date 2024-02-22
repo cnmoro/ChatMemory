@@ -5,6 +5,9 @@ from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
 from langdetect import detect
 from memory.log_util import log_exception
+import nltk
+
+nltk.download('punkt')
 
 lang_map = {
     'ar': 'arabic',
