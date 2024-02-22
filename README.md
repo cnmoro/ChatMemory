@@ -1,3 +1,11 @@
+[![codecov](https://codecov.io/gh/cnmoro/ChatMemory/graph/badge.svg?token=B75N22ACYP)](https://codecov.io/gh/cnmoro/ChatMemory)
+
+[![Downloads](https://static.pepy.tech/badge/chatmemorydb)](https://pepy.tech/project/chatmemorydb)
+
+[![Downloads](https://static.pepy.tech/badge/chatmemorydb/month)](https://pepy.tech/project/chatmemorydb)
+
+[![Downloads](https://static.pepy.tech/badge/chatmemorydb/week)](https://pepy.tech/project/chatmemorydb)
+
 ## **Memory**
 
 This is a Python project aimed at providing an extremely simple way to manage the “memory” of a chatbot, when using LLMs. The goal is to provide a simple interface to memorize prompts and answers, as well as store it using **summarization**, while providing methods to fetch the context of the conversation - considering both **short** and **long-term** memory. Please check out the code snippets below.
