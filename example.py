@@ -10,7 +10,7 @@ memory.memorize("What is the capital of Italy?", "The capital of Italy is Rome."
 memory.memorize("What is the capital of France?", "The capital of France is Paris.", session_id)
 memory.memorize("What is the capital of Spain?", "The capital of Spain is Madrid.", session_id)
 memory.memorize("What is the capital of Brazil?", "The capital of Brazil is Brasília.", session_id)
-memory.memorize("What is the capital of Peru?", "The capital of Peru is Lima.")
+memory.memorize("What is the capital of Peru?", "The capital of Peru is Lima.", session_id)
 memory.memorize("What is the capital of Colombia?", "The capital of Colombia is Bogotá.", session_id)
 memory.memorize("What is the capital of Venezuela?", "The capital of Venezuela is Caracas.", session_id)
 _, question_id, answer_id = memory.memorize("What is the capital of Ecuador?", "The capital of Ecuador is Quito.", session_id)
@@ -77,7 +77,7 @@ retrieved_memory = memory.remember(session_id, new_prompt)
     # using semantic search
     'context_memory': [
             {
-                'sentence': 'the capital of spain is madrid.',
+            'sentence': 'the capital of spain is madrid.',
             'session_id': 'c8ea1875-9e77-4eb7-8f2a-a1dfc7c104c5',
             'message_id': 'f39886b8-f5d8-4610-a4a5-fd833572bfae',
             'type': 'answer'
