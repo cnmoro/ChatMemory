@@ -1,18 +1,24 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='memory',
+    name='chatmemorydb',
     version='0.1',
     author='Carlo Moro',
     author_email='cnmoro@gmail.com',
     description="Memory",
     packages=find_packages(),
     package_data={
-        # TODO
     },
     include_package_data=True,
     install_requires=[
-        # TODO
+        "mongita",
+        "logzero",
+        "sumy",
+        "langdetect",
+        "openai==1.12.0",
+        "minivectordb",
+        "text-util-en-pt",
+        "numpy"
     ],
     classifiers=[
         'Programming Language :: Python :: 3',

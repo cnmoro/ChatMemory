@@ -1,5 +1,5 @@
-from memory.embeddings import AlternativeModel, extract_embeddings_free, \
-    extract_embeddings_openai
+from memory.embeddings import AlternativeModel, \
+    extract_embeddings_free, extract_embeddings_openai
 from memory.summarization import summarize_text_basic, \
     summarize_text_with_gpt
 from minivectordb.vector_database import VectorDatabase
@@ -23,14 +23,15 @@ class Memory:
         """
         Initializes a new instance of the class.
 
-        Args:
-            db_name (str, optional): The name of the database. Defaults to "chat_db".
-            embedding_extraction_function (function, optional): The function to use for extracting embeddings from text.
-            free_embedding_model_type (AlternativeModel, optional): The type of the free embedding model to use. Defaults to AlternativeModel.tiny.
-            summarization_function (function, optional): The function to use for summarizing text.
-            openai_key (str, optional): The API key for OpenAI. If provided, an OpenAI client will be initialized.
-            openai_embedding_model (str, optional): The name of the OpenAI embedding model to use. Defaults to "text-embedding-3-small".
-            openai_summarization_model (str, optional): The name of the OpenAI summarization model to use. Defaults to "gpt-3.5-turbo".
+        Args with defaults:
+        - mongita_storage_location: The location where the Mongita database will be stored.
+        - vector_db_storage_location: The location where the vector database will be stored.
+        - embedding_extraction_function: A function that extracts embeddings from text.
+        - free_embedding_model_type: The type of the free embedding model to use.
+        - summarization_function: A function that summarizes text.
+        - openai_key: The OpenAI API key.
+        - openai_embedding_model: The OpenAI embedding model to use.
+        - openai_summarization_model: The OpenAI summarization model to use.
         """
         self.embedding_extraction_function = embedding_extraction_function
         self.summarization_function = summarization_function
@@ -122,13 +123,13 @@ class Memory:
 
         return session_id, question_id, answer_id
 
-    def get_last_interactions(self, session_id, num_chats=4):
+    def get_last_interactions(self, session_id, num_chats=4, recent_first=True):
         """
         Retrieves the last N chats from the database.
         """
         chats = self.db_coll.find(
             {"session_id": session_id}
-        ).sort('timestamp', -1).limit(num_chats)
+        ).sort('timestamp', -1 if recent_first else 1).limit(num_chats)
         chats = list(chats)
 
         # Remove the _id field
@@ -152,14 +153,14 @@ class Memory:
         """
         Fetches relevant information from the database based on the new prompt.
         """
-        # 1 - Retrieve the N most recent pairs of questions and answers
+        # Retrieve the N most recent pairs of questions and answers
         last_n_messages = self.get_last_interactions(session_id, recent_interaction_count)
         last_n_messages_ids = [ m['message_id'] for m in last_n_messages ]
 
-        # 2 - Get embeddings for the incoming prompt
+        # Get embeddings for the incoming prompt
         prompt_embedding = self.extract_embeddings_wrapper(new_prompt)
 
-        # 3 - Search in vector database for the most similar question
+        # Search in vector database for the most similar question
         # (Excluding the last "N" messages, as they are fetched directly from the database)
         _, _, metadatas = self.vector_db.find_most_similar(
             prompt_embedding,
@@ -181,7 +182,7 @@ class Memory:
                 else:
                     suggested_context += f"Previous answer: {message['answer_summary']}\n"
         
-        # 4 - Return the context metadata
+        # Return the context metadata
         return {
             "recent_memory": last_n_messages,
             "context_memory": metadatas,
@@ -212,36 +213,34 @@ class Memory:
         """
         Forgets the given session.
         """
-        # 1 - Delete from the database
+        # Delete from the database
         self.db_coll.delete_many({"session_id": session_id})
 
-        # 2 - Delete from the vector database
+        # Delete from the vector database
         self.delete_session_from_vector_db(session_id)
     
     def forget_message(self, session_id, message_id):
         """
         Forgets the given message.
         """
-        # 1 - Delete from the database
+        # Delete from the database
         self.db_coll.delete_one({"session_id": session_id, "message_id": message_id})
 
-        # 2 - Delete from the vector database
+        # Delete from the vector database
         self.delete_message_from_vector_db(session_id, message_id)
 
-# if __name__ == '__main__':
-#     # Example usage
-#     memory = Memory()
+    def list_messages(self, session_id, count = False, page = 1, limit = 20, recent_first = True):
+        """
+        Lists the messages for the given session.
+        Order is from most recent to oldest.
+        """
+        skip = (page - 1) * limit
+        messages = self.db_coll.find(
+            {"session_id": session_id}
+        ).sort('timestamp', -1 if recent_first else 1).skip(skip).limit(limit)
+        messages = list(messages)
 
-#     session_id, question_id, answer_id = memory.memorize("Hello. My name is Carlo!", "Hi there Carlo, what can I do for you?")
-
-#     # Memorize more interactions
-#     memory.memorize("What is the capital of France?", "The capital of France is Paris.", session_id)
-#     memory.memorize("What is the capital of Spain?", "The capital of Spain is Madrid.", session_id)
-#     memory.memorize("What is the capital of Portugal?", "The capital of Portugal is Lisbon.", session_id)
-#     # More
-#     memory.memorize("What do you like to do on friday?", "I like to go to the movies.", session_id)
-#     memory.memorize("What is your favorite movie?", "My favorite movie is The Matrix.", session_id)
-#     memory.memorize("What is your favorite food?", "I like pizza.", session_id)
-
-#     # Remember
-#     retrieved_memory = memory.remember(session_id, "What is the capital of Italy?")
+        if count:
+            return self.db_coll.count_documents({"session_id": session_id})
+        else:
+            return messages

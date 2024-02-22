@@ -1,9 +1,9 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "mongita", "logzero", "sumy", "langdetect", "openai==1.12.0", "minivectordb", "text-util-en-pt", "numpy"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "memory"
+name = "chatmemorydb"
 version = "0.1"
 authors = [
   { name="Carlo Moro", email="cnmoro@gmail.com" },
@@ -18,5 +18,5 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/cnmoro/Mini-Vector-DB"
-"Bug Tracker" = "https://github.com/cnmoro/Mini-Vector-DB"
+"Homepage" = "https://github.com/cnmoro/ChatMemory"
+"Bug Tracker" = "https://github.com/cnmoro/ChatMemory/issues"

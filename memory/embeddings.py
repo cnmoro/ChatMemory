@@ -9,8 +9,11 @@ class AlternativeModel(str, Enum):
     large = "large"
     bgem3 = "bgem3"
 
-def extract_embeddings_free(text, _type: AlternativeModel):
+def extract_embeddings_free(text, _type: AlternativeModel, reload_model=False):
     global model
+
+    if reload_model:
+        model = None
 
     if model is None:
         if _type == AlternativeModel.tiny:
@@ -25,6 +28,6 @@ def extract_embeddings_free(text, _type: AlternativeModel):
 
     return model.extract_embeddings(text)
 
-def extract_embeddings_openai(text, openai_client, model_name):
+def extract_embeddings_openai(text, openai_client, model_name = "text-embedding-3-small"):
     text = text.replace("\n", " ")
     return openai_client.embeddings.create(input = [text], model=model_name).data[0].embedding

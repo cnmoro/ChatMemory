@@ -6,6 +6,8 @@ from memory.summarization import summarize_text_basic
 import numpy as np
 import shutil, os
 
+OPENAI_KEY = os.environ.get('OPENAI_KEY')
+
 @contextmanager
 def get_memory_object(**kwargs):
     memory = Memory(**kwargs)
@@ -136,4 +138,29 @@ def test_remember_bigger_conversation():
 
         assert 'brasília' in retrieved_memory['suggested_context'].lower()
 
-# TODO: OpenAI related tests
+def test_brain_summarization_with_openai():
+    with get_memory_object(openai_key=OPENAI_KEY) as memory:
+        summary = memory.summarize("This is a test sentence for summarization.")
+        assert isinstance(summary, str)
+
+def test_brain_embedding_extraction_with_openai():
+    with get_memory_object(openai_key=OPENAI_KEY) as memory:
+        embedding = memory.extract_embeddings_wrapper("This is a test sentence.")
+        assert isinstance(embedding, list) or isinstance(embedding, np.ndarray)
+
+def test_list_and_count_messages_with_pagination():
+    with get_memory_object() as memory:
+        # Memorize a few messages
+        session_id, _, _ = memory.memorize("Hello", "Hi there! How can I help you?")
+        memory.memorize("What is the capital of Italy?", "The capital of Italy is Rome.", session_id)
+        memory.memorize("What is the capital of France?", "The capital of France is Paris.", session_id)
+        memory.memorize("What is the capital of Spain?", "The capital of Spain is Madrid.", session_id)
+        memory.memorize("What is the capital of Germany?", "The capital of Germany is Berlin.", session_id)
+
+        # Test count
+        count = memory.list_messages(session_id, count=True)
+        assert count == 10
+
+        # Test list
+        messages = memory.list_messages(session_id, page=1, limit=4)
+        assert len(messages) == 4

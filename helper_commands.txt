@@ -1,0 +1,5 @@
+pytest --cov=memory --cov-report term-missing
+
+python setup.py sdist bdist_wheel
+
+twine upload dist/*

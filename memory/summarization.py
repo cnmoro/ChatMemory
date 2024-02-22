@@ -69,9 +69,4 @@ def summarize_text_with_gpt(text, openai_client, model_name):
     except Exception:
         log_exception()
     
-    try:
-        return summarize_text_basic(text)
-    except Exception:
-        log_exception()
-
-    return text
+    return summarize_text_basic(text)

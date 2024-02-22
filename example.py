@@ -1,18 +1,3 @@
-## **Memory**
-
-This is a Python project aimed at providing an extremely simple way to manage the “memory” of a chatbot, when using LLMs. The goal is to provide a simple interface to memorize prompts and answers, as well as store it using **summarization**, while providing methods to fetch the context of the conversation - considering both **short** and **long-term** memory. Please check out the code snippets below.
-
-Memory is stored in two forms, a simple vector database for semantic search, as well as Mongita ("sqlite" for MongoDB) for chat history and other metadata.
-
-### **Installation**
-
-```plaintext
-pip install chatmemorydb
-```
-
-### **Usage**
-
-```python
 from memory.brain import Memory
 
 memory = Memory()
@@ -143,8 +128,3 @@ memory.forget_session(session_id)
 # param openai_key: str = None
 # param openai_embedding_model: str = "text-embedding-3-small"
 # param openai_summarization_model: str = "gpt-3.5-turbo"
-```
-
-## **License**
-
-This project is licensed under the MIT License.
