@@ -99,7 +99,7 @@ retrieved_memory = memory.remember(session_id, new_prompt)
     # We also retrieve the most similar questions and answers from the long-term memory
     # using semantic search
     'context_memory': [
-            {
+        {
             'sentence': 'the capital of spain is madrid.',
             'session_id': 'c8ea1875-9e77-4eb7-8f2a-a1dfc7c104c5',
             'message_id': 'f39886b8-f5d8-4610-a4a5-fd833572bfae',
