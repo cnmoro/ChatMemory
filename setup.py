@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='chatmemorydb',
-    version='0.2',
+    version='0.3',
     author='Carlo Moro',
     author_email='cnmoro@gmail.com',
     description="Memory",
