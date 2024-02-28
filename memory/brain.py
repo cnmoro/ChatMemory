@@ -164,6 +164,7 @@ class Memory:
         # (Excluding the last "N" messages, as they are fetched directly from the database)
         _, _, metadatas = self.vector_db.find_most_similar(
             prompt_embedding,
+            metadata_filter={'session_id': session_id},
             k = 10
         )
         metadatas = [ m for m in metadatas if m['message_id'] not in last_n_messages_ids ][:2]

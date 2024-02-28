@@ -164,3 +164,38 @@ def test_list_and_count_messages_with_pagination():
         # Test list
         messages = memory.list_messages(session_id, page=1, limit=4)
         assert len(messages) == 4
+
+def test_multiple_sessions_ensure_no_interference():
+    with get_memory_object() as memory:
+        # Memorize a few messages
+        session_1, _, _ = memory.memorize("Hello, my name is John Doe", "Hi there John! How can I help you?")
+        memory.memorize("What is the capital of Italy?", "The capital of Italy is Rome.", session_1)
+        memory.memorize("What is the capital of France?", "The capital of France is Paris.", session_1)
+        memory.memorize("What is the capital of Spain?", "The capital of Spain is Madrid.", session_1)
+
+        # Now start a new session
+        session_2, _, _ = memory.memorize("Hello, my name is Jane Doe", "Hi there Jane! How can I help you?")
+        memory.memorize("What is the capital of Germany?", "The capital of Germany is Berlin.", session_2)
+        memory.memorize("What is the capital of the United Kingdom?", "The capital of the United Kingdom is London.", session_2)
+        memory.memorize("What is the capital of the United States?", "The capital of the United States is Washington D.C.", session_2)
+
+        # Now remember the conversation for session 1
+        retrieved_memory = memory.remember(session_1, "capital of Italy ?")
+        # Assert that no information from session_2 is present
+        assert 'berlin' not in retrieved_memory['suggested_context'].lower()
+        assert 'london' not in retrieved_memory['suggested_context'].lower()
+        assert 'washington' not in retrieved_memory['suggested_context'].lower()
+        assert 'germany' not in retrieved_memory['suggested_context'].lower()
+        assert 'united kingdom' not in retrieved_memory['suggested_context'].lower()
+        assert 'united states' not in retrieved_memory['suggested_context'].lower()
+
+        # Now remember the conversation for session 2
+        retrieved_memory = memory.remember(session_2, "capital of the United States ?")
+        # Assert that no information from session_1 is present
+        assert 'rome' not in retrieved_memory['suggested_context'].lower()
+        assert 'paris' not in retrieved_memory['suggested_context'].lower()
+        assert 'madrid' not in retrieved_memory['suggested_context'].lower()
+        assert 'italy' not in retrieved_memory['suggested_context'].lower()
+        assert 'france' not in retrieved_memory['suggested_context'].lower()
+        assert 'spain' not in retrieved_memory['suggested_context'].lower()
+        
