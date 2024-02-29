@@ -177,6 +177,7 @@ class Memory:
         suggested_context += "\n"
 
         if len(last_n_messages) > 0:
+            last_n_messages.reverse()
             for message in last_n_messages:
                 if 'question' in message:
                     suggested_context += f"Previous prompt: {message['question_summary']}\n"
