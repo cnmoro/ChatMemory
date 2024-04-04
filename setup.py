@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='chatmemorydb',
-    version='0.3',
+    version='0.5',
     author='Carlo Moro',
     author_email='cnmoro@gmail.com',
     description="Memory",
@@ -15,7 +15,7 @@ setup(
         "logzero",
         "sumy",
         "langdetect",
-        "openai==1.12.0",
+        "openai",
         "minivectordb",
         "text-util-en-pt",
         "numpy"

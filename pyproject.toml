@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0", "mongita", "logzero", "sumy", "langdetect", "openai==1.12.0", "minivectordb", "text-util-en-pt", "numpy"]
+requires = ["setuptools>=61.0", "mongita", "logzero", "sumy", "langdetect", "openai", "minivectordb", "text-util-en-pt", "numpy"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "chatmemorydb"
-version = "0.3"
+version = "0.5"
 authors = [
   { name="Carlo Moro", email="cnmoro@gmail.com" },
 ]
