@@ -8,4 +8,4 @@ def test_extract_embeddings_free_tiny():
 
 def test_extract_embeddings_free_small():
     result = extract_embeddings_free(text, AlternativeModel.small, reload_model=True)
-    assert len(result) == 512
+    assert len(result) == 384

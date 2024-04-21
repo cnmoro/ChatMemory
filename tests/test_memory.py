@@ -132,7 +132,7 @@ def test_remember_bigger_conversation():
         memory.memorize("What is the capital of Ecuador?", "The capital of Ecuador is Quito.", session_id)
 
         # Now remember the conversation
-        retrieved_memory = memory.remember(session_id, "capital of Brazil ?")
+        retrieved_memory = memory.remember(session_id, "What is the capital of Brazil ?")
 
         print(retrieved_memory)
 

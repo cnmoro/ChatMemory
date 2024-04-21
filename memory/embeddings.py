@@ -24,7 +24,10 @@ def extract_embeddings_free(text, _type: AlternativeModel, reload_model=False):
                 AlternativeModel.large: EmbeddingModelType.large,
                 AlternativeModel.bgem3: EmbeddingModelType.bgem3
             }
-            model = EmbeddingModel(_type_map[_type])
+            model = EmbeddingModel(
+                use_quantized_onnx_model=False,
+                alternative_model=_type_map[_type]
+            )
 
     return model.extract_embeddings(text)
 
