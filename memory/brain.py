@@ -55,10 +55,6 @@ class Memory:
         self.db_client = MongitaClientDisk(self.db_location)
         self.db_coll = self.db_client["chat_db"]["chat_sessions"]
 
-        # Ensure index creation
-        self.db_coll.create_index([("session_id", 1)])
-        self.db_coll.create_index([("timestamp", 1)])
-
     def summarize(self, text):
         """
         Summarizes the given text.

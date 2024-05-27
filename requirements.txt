@@ -3,6 +3,6 @@ logzero
 sumy
 langdetect
 openai==1.12.0
-minivectordb
+minivectordb==1.5.2
 text-util-en-pt
 numpy
