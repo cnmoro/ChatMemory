@@ -16,7 +16,7 @@ setup(
         "sumy",
         "langdetect",
         "openai",
-        "minivectordb",
+        "minivectordb==1.5.2",
         "text-util-en-pt",
         "numpy"
     ],
