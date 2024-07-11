@@ -1,38 +1,37 @@
+from memory.embeddings import extract_embeddings
+from memory.compression import compress_text
 from contextlib import contextmanager
 from memory.brain import Memory
-from memory.embeddings import AlternativeModel
-from minivectordb.vector_database import VectorDatabase
-from memory.summarization import summarize_text_basic
-import numpy as np
-import shutil, os
-
-OPENAI_KEY = os.environ.get('OPENAI_KEY')
+import shutil, os, numpy as np
 
 @contextmanager
-def get_memory_object(**kwargs):
-    memory = Memory(**kwargs)
+def get_memory_object():
+    memory = Memory()
     yield memory
-    memory.db_client.close()
+    memory.close_db()
 
     # Remove the created files and folders
-    if os.path.exists(memory.db_location):
-        shutil.rmtree(memory.db_location)
+    if os.path.exists(memory.sqlite_db_path):
+        # Delete the file
+        os.remove(memory.sqlite_db_path)
 
-    if os.path.exists(memory.vector_db_storage_location):
-        os.remove(memory.vector_db_storage_location)
-
-def test_memory_initialization():
-    with get_memory_object() as memory:
-        assert memory.openai_key is None
-        assert memory.free_embedding_model_type == AlternativeModel.tiny
-        assert isinstance(memory.vector_db, VectorDatabase)
-        assert memory.db_location == './mongita_memory'
+    if os.path.exists(memory.vector_db_storage_folder_location):
+        # Delete the folder
+        shutil.rmtree(memory.vector_db_storage_folder_location)
+    
+    del memory
 
 # Test for summarization functionality
 def test_summarize():
-    with get_memory_object() as memory:
-        summary = memory.summarize("This is a test sentence for summarization.")
-        assert isinstance(summary, str)
+    original_text = "This is a test sentence for summarization."
+    summary = compress_text(original_text)
+    assert isinstance(summary, str)
+    assert original_text == summary
+
+    big_text = original_text * 100
+    summary = compress_text(big_text)
+    assert isinstance(summary, str)
+    assert len(summary) < len(big_text)
 
 # Test for memorize and retrieval of interactions
 def test_memorize_and_retrieve():
@@ -49,10 +48,10 @@ def test_memorize_and_retrieve():
         assert interactions[0]['answer'] == "Test answer"
         assert interactions[1]['question'] == "Test question"
 
-# Test for embedding extraction wrapper
-def test_extract_embeddings_wrapper():
+# Test for embedding extraction
+def test_extract_embeddings():
     with get_memory_object() as memory:
-        embedding = memory.extract_embeddings_wrapper("This is a test sentence.")
+        embedding = extract_embeddings("This is a test sentence.")
         assert isinstance(embedding, list) or isinstance(embedding, np.ndarray)
 
 # Test forgetting a session
@@ -75,18 +74,6 @@ def test_remember():
         assert isinstance(retrieved_memory['recent_memory'], list)
         assert isinstance(retrieved_memory['context_memory'], list)
         assert isinstance(retrieved_memory['suggested_context'], str)
-
-def test_summarize_with_provided_function():
-    with get_memory_object(summarization_function=summarize_text_basic) as memory:
-        summary = memory.summarize("This is a test sentence for summarization.")
-        assert isinstance(summary, str)
-
-def test_extract_embedding_with_provided_function():
-    with get_memory_object(embedding_extraction_function=lambda x: [1, 2, 3]) as memory:
-        embedding = memory.extract_embeddings_wrapper("This is a test sentence.")
-        assert isinstance(embedding, list)
-        assert len(embedding) == 3
-        assert embedding == [1, 2, 3]
 
 def test_remember_without_memory():
     with get_memory_object() as memory:
@@ -126,27 +113,15 @@ def test_remember_bigger_conversation():
         memory.memorize("What is the capital of Brazil?", "The capital of Brazil is Brasília.", session_id)
         memory.memorize("What is the capital of Argentina?", "The capital of Argentina is Buenos Aires.", session_id)
         memory.memorize("What is the capital of Chile?", "The capital of Chile is Santiago.", session_id)
-        memory.memorize("What is the capital of Peru?", "The capital of Peru is Lima.")
+        memory.memorize("What is the capital of Peru?", "The capital of Peru is Lima.", session_id)
         memory.memorize("What is the capital of Colombia?", "The capital of Colombia is Bogotá.", session_id)
         memory.memorize("What is the capital of Venezuela?", "The capital of Venezuela is Caracas.", session_id)
         memory.memorize("What is the capital of Ecuador?", "The capital of Ecuador is Quito.", session_id)
 
         # Now remember the conversation
-        retrieved_memory = memory.remember(session_id, "What is the capital of Brazil ?")
-
-        print(retrieved_memory)
+        retrieved_memory = memory.remember(session_id, "Capital of Brazil ?")
 
         assert 'brasília' in retrieved_memory['suggested_context'].lower()
-
-def test_brain_summarization_with_openai():
-    with get_memory_object(openai_key=OPENAI_KEY) as memory:
-        summary = memory.summarize("This is a test sentence for summarization.")
-        assert isinstance(summary, str)
-
-def test_brain_embedding_extraction_with_openai():
-    with get_memory_object(openai_key=OPENAI_KEY) as memory:
-        embedding = memory.extract_embeddings_wrapper("This is a test sentence.")
-        assert isinstance(embedding, list) or isinstance(embedding, np.ndarray)
 
 def test_list_and_count_messages_with_pagination():
     with get_memory_object() as memory:

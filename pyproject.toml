@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0", "mongita", "logzero", "sumy", "langdetect", "openai", "minivectordb==1.5.2", "text-util-en-pt", "numpy"]
+requires = ["setuptools>=61.0", "minivectordb>=2.2.1", "logzero", "numpy<2", "nltk", "scikit-learn", "tiktoken", "fasttext"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "chatmemorydb"
-version = "0.7"
+version = "1.1"
 authors = [
   { name="Carlo Moro", email="cnmoro@gmail.com" },
 ]
@@ -15,6 +15,15 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+]
+dependencies = [
+    "minivectordb>=2.2.1",
+    "logzero",
+    "numpy<2",
+    "nltk",
+    "scikit-learn",
+    "tiktoken",
+    "fasttext"
 ]
 
 [project.urls]

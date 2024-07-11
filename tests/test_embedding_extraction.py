@@ -1,11 +1,7 @@
-from memory.embeddings import AlternativeModel, extract_embeddings_free, model
+from memory.embeddings import extract_embeddings
 
 text = "Hello, world!"
 
-def test_extract_embeddings_free_tiny():
-    result = extract_embeddings_free(text, AlternativeModel.tiny, reload_model=True)
+def test_extract_embeddings():
+    result = extract_embeddings(text)
     assert len(result) == 512
-
-def test_extract_embeddings_free_small():
-    result = extract_embeddings_free(text, AlternativeModel.small, reload_model=True)
-    assert len(result) == 384

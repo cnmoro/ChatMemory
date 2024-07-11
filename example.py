@@ -24,28 +24,31 @@ messages = memory.list_messages(session_id, page=1, limit=3, recent_first=True)
 # Result
 [
     {
-        '_id': ObjectId('65d789c5f698b7e4198e4b1f'),
-        'message_id': '77942ef3-3a63-4e3c-90d3-f4c13ffef1ec',
-        'question': 'What is the capital of Ecuador?',
-        'question_summary': 'What is the capital of Ecuador?',
-        'session_id': 'c8ea1875-9e77-4eb7-8f2a-a1dfc7c104c5',
-        'timestamp': datetime.datetime(2024, 2, 22, 17, 52, 5, 930335)
+        'session_id': '1c4c9102-2d01-47d6-9204-1038a7f19ea7',
+    'message_id': 'fdbec0e0-ef92-4f6d-9e05-f3881a7b6c4b',
+    'question': 'What is the capital of Ecuador?',
+    'question_summary': 'What is the capital of Ecuador?',
+    'answer': None,
+    'answer_summary': None,
+    'timestamp': '2024-07-11 16:58:01.004009'
     },
     {
-        '_id': ObjectId('65d789c5f698b7e4198e4b1e'),
+        'session_id': '1c4c9102-2d01-47d6-9204-1038a7f19ea7',
+        'message_id': '5ce5c6e3-db3c-4a72-aba3-94f5500b2e27',
+        'question': None,
+        'question_summary': None,
         'answer': 'The capital of Venezuela is Caracas.',
         'answer_summary': 'The capital of Venezuela is Caracas.',
-        'message_id': 'bacd8e4b-0d1d-477d-bd23-f99f12068224',
-        'session_id': 'c8ea1875-9e77-4eb7-8f2a-a1dfc7c104c5',
-        'timestamp': datetime.datetime(2024, 2, 22, 17, 52, 5, 906237)
+        'timestamp': '2024-07-11 16:58:00.993597'
     },
     {
-        '_id': ObjectId('65d789c5f698b7e4198e4b1d'),
-        'message_id': 'a6256250-3797-4073-ae85-3d803fbc8f27',
+        'session_id': '1c4c9102-2d01-47d6-9204-1038a7f19ea7',
+        'message_id': '1897cbab-7e6f-4c85-b3fe-bd60a1f02172',
         'question': 'What is the capital of Venezuela?',
         'question_summary': 'What is the capital of Venezuela?',
-        'session_id': 'c8ea1875-9e77-4eb7-8f2a-a1dfc7c104c5',
-        'timestamp': datetime.datetime(2024, 2, 22, 17, 52, 5, 905285)
+        'answer': None,
+        'answer_summary': None,
+        'timestamp': '2024-07-11 16:58:00.993499'
     }
 ]
 
@@ -58,73 +61,72 @@ retrieved_memory = memory.remember(session_id, new_prompt)
     # We get the most recent interactions by default (short-term memory)
     'recent_memory': [
         {
-            'session_id': 'c8ea1875-9e77-4eb7-8f2a-a1dfc7c104c5',
-            'message_id': '77942ef3-3a63-4e3c-90d3-f4c13ffef1ec',
-            'question': 'What is the capital of Ecuador?',
-            'question_summary': 'What is the capital of Ecuador?',
-            'timestamp': datetime.datetime(2024, 2, 22, 17, 52, 5, 930335)
+            'session_id': '1c4c9102-2d01-47d6-9204-1038a7f19ea7',
+            'message_id': '5fd79a44-c110-43b7-b4ef-2ab59a1c03fa',
+            'question': None,
+            'question_summary': None,
+            'answer': 'The capital of Colombia is Bogotá.',
+            'answer_summary': 'The capital of Colombia is Bogotá.',
+            'timestamp': '2024-07-11 16:58:00.983392'
         },
         {
-            'session_id': 'c8ea1875-9e77-4eb7-8f2a-a1dfc7c104c5',
-            'message_id': 'bacd8e4b-0d1d-477d-bd23-f99f12068224',
+            'session_id': '1c4c9102-2d01-47d6-9204-1038a7f19ea7',
+            'message_id': '1897cbab-7e6f-4c85-b3fe-bd60a1f02172',
+            'question': 'What is the capital of Venezuela?',
+            'question_summary': 'What is the capital of Venezuela?',
+            'answer': None,
+            'answer_summary': None,
+            'timestamp': '2024-07-11 16:58:00.993499'
+        },
+        {
+            'session_id': '1c4c9102-2d01-47d6-9204-1038a7f19ea7',
+            'message_id': '5ce5c6e3-db3c-4a72-aba3-94f5500b2e27',
+            'question': None,
+            'question_summary': None,
             'answer': 'The capital of Venezuela is Caracas.',
             'answer_summary': 'The capital of Venezuela is Caracas.',
-            'timestamp': datetime.datetime(2024, 2, 22, 17, 52, 5, 906237)
+            'timestamp': '2024-07-11 16:58:00.993597'
         },
-        ...
+        {
+            'session_id': '1c4c9102-2d01-47d6-9204-1038a7f19ea7',
+            'message_id': 'fdbec0e0-ef92-4f6d-9e05-f3881a7b6c4b',
+            'question': 'What is the capital of Ecuador?',
+            'question_summary': 'What is the capital of Ecuador?',
+            'answer': None,
+            'answer_summary': None,
+            'timestamp': '2024-07-11 16:58:01.004009'
+        }
     ],
     # We also retrieve the most similar questions and answers from the long-term memory
     # using semantic search
     'context_memory': [
-            {
-            'sentence': 'the capital of spain is madrid.',
-            'session_id': 'c8ea1875-9e77-4eb7-8f2a-a1dfc7c104c5',
-            'message_id': 'f39886b8-f5d8-4610-a4a5-fd833572bfae',
+        {
+            'sentence': 'The capital of Spain is Madrid.',
+            'session_id': '1c4c9102-2d01-47d6-9204-1038a7f19ea7',
+            'message_id': '39cf7746-3324-4348-916a-06e45e161867',
             'type': 'answer'
         },
         {
-            'sentence': 'what is the capital of spain ?',
-            'session_id': 'c8ea1875-9e77-4eb7-8f2a-a1dfc7c104c5',
-            'message_id': '96644ee7-c388-49f5-89b8-6e03905ef92c',
+            'sentence': 'What is the capital of Spain?',
+            'session_id': '1c4c9102-2d01-47d6-9204-1038a7f19ea7',
+            'message_id': '5f88719c-d037-445a-8423-71c1482ce016',
             'type': 'question'
         }
     ],
-    
     # Then, everything is glued together and provided as a suggestion
     # This is the text that would be injected into the new prompt,
     # as context of the existing conversation
     'suggested_context': '''
-        Previous context (answer): the capital of spain is madrid.
-        Previous context (prompt): what is the capital of spain ?
-        
-        Previous prompt: What is the capital of Ecuador?
-        Previous answer: The capital of Venezuela is Caracas.
-        Previous prompt: What is the capital of Venezuela?
-        Previous answer: The capital of Colombia is Bogotá.
+    Previous context (answer): The capital of Spain is Madrid.
+    Previous context (prompt): What is the capital of Spain?
+    
+    Previous answer: The capital of Colombia is Bogotá.
+    Previous prompt: What is the capital of Venezuela?
+    Previous answer: The capital of Venezuela is Caracas.
+    Previous prompt: What is the capital of Ecuador?
     '''
 }
 
+
 # Forget an entire session
 memory.forget_session(session_id)
-
-### Parameters for the memory object
-
-### Customize the storage locations
-# param mongita_storage_location : defaults to './mongita_memory' (folder)
-# param vector_db_storage_location : defaults to './vector_memory.pkl' (file)
-
-### Custom embedding function (bring your own!)
-### Should be able to receive the text and return a list of embeddings
-### If no OpenAI key is provided, a free model will be used
-# param free_embedding_model_type: AlternativeModel = AlternativeModel.tiny
-# param embedding_extraction_function = None
-
-### Custom summarization (bring your own!)
-### Should be able to receive the text and return the summary
-# param summarization_function = None
-
-### OpenAI key and models
-### Default ones are the most cost-effective
-# param openai_key: str = None
-# param openai_embedding_model: str = "text-embedding-3-small"
-# param openai_summarization_model: str = "gpt-3.5-turbo"
