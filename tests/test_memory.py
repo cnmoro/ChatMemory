@@ -8,7 +8,6 @@ import shutil, os, numpy as np
 def get_memory_object():
     memory = Memory()
     yield memory
-    memory.close_db()
 
     # Remove the created files and folders
     if os.path.exists(memory.sqlite_db_path):
