@@ -42,6 +42,16 @@ class Memory:
                     )
                 ''')
                 db_conn.commit()
+
+                # Create index for faster lookups
+                cursor = db_conn.cursor()
+                cursor.execute('''
+                    CREATE INDEX IF NOT EXISTS chat_sessions_session_id_index ON chat_sessions (session_id)
+                ''')
+                cursor.execute('''
+                    CREATE INDEX IF NOT EXISTS chat_sessions_message_id_index ON chat_sessions (message_id)
+                ''')
+                db_conn.commit()
             
     def store_embeddings(self, sentences, session_id, message_id, type):
         unique_ids = [str(uuid.uuid4()) for _ in range(len(sentences))]
