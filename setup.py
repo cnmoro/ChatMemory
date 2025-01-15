@@ -1,24 +1,22 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='chatmemorydb',
-    version='1.3',
+    name='chatmemorydb-lmdb',
+    version='1.0',
     author='Carlo Moro',
     author_email='cnmoro@gmail.com',
     description="Memory",
     packages=find_packages(),
-    package_data={
-        "memory": ["resources/*"]
-    },
+    package_data={},
     include_package_data=True,
     install_requires=[
-        "minivectordb>=2.2.1",
-        "logzero",
-        "numpy<2",
-        "nltk",
-        "scikit-learn",
-        "tiktoken",
-        "fasttext"
+        "semantic-compressor",
+        "minivectordb-simple",
+        "numpy",
+        "lmdb",
+        "msgpack",
+        "pymongo",
+        "nanoranker"
     ],
     classifiers=[
         'Programming Language :: Python :: 3',

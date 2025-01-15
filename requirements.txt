@@ -1,7 +1,7 @@
-minivectordb==2.2.1
-logzero==1.7.0
-numpy==1.26.4
-nltk==3.8.1
-scikit-learn==1.5.1
-tiktoken==0.7.0
-fasttext==0.9.3
+semantic-compressor
+minivectordb-simple
+numpy
+lmdb
+msgpack
+pymongo
+nanoranker

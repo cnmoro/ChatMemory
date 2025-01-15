@@ -1,64 +1,57 @@
-from minivectordb.sharded_vector_database import ShardedVectorDatabase
-from memory.compression import compress_text, structurize_text
-from memory.embeddings import extract_embeddings
-import uuid, sqlite3, numpy as np, threading
-from datetime import datetime
-
-dummy_embedding = np.zeros(512, dtype=np.float32)
+from memory.lmdb_vector_mapping import LmdbStorage, MemmapStorage
+from minivectordb.embedding_model import EmbeddingModel
+from compressor.semantic import compress_text
+import uuid, pymongo, time, datetime, signal
+from memory.vector_database import VectorDB
+from nanoranker import rank
 
 class Memory:
     def __init__(
             self,
-            sqlite_db_path: str = './memory.db',
-            vector_db_storage_folder_location: str = 'memory_shards'
+            mongo_uri: str,
+            mongo_database: str,
+            mongo_collection_vectordb: str,
+            mongo_collection_conversation_data: str,
+            override_vector_storage = None,
+            override_text_storage = None
         ):
-        """
-        Initializes a new instance of the class.
+        
+        if override_vector_storage is None and override_text_storage is None:
+            # Create instances of the MemmapStorage class
+            override_vector_storage = MemmapStorage("mem_vector_storage")
+            override_text_storage = LmdbStorage("mem_text_storage")
+        
+        def signal_handler(signum, frame):
+            print("Received signal, closing storage")
+            override_vector_storage.close()
+            override_text_storage.close()
+            print("Closed storage")
 
-        Args with defaults:
-        - sqlite_db_path: The path to the SQLite database file.
-        - vector_db_storage_location: The location where the vector database will be stored.
-        """
-        self.vector_db_storage_folder_location = vector_db_storage_folder_location
-        self.vector_db = ShardedVectorDatabase(storage_dir=vector_db_storage_folder_location)
-        self.sqlite_db_path = sqlite_db_path
-        self.lock = threading.Lock()
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
 
-        self.init_db()
-
-    def init_db(self):
-        with self.lock:
-            with sqlite3.connect(self.sqlite_db_path) as db_conn:
-                cursor = db_conn.cursor()
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS chat_sessions (
-                        session_id TEXT,
-                        message_id TEXT PRIMARY KEY,
-                        question TEXT,
-                        question_summary TEXT,
-                        answer TEXT,
-                        answer_summary TEXT,
-                        timestamp DATETIME
-                    )
-                ''')
-                db_conn.commit()
-
-                # Create index for faster lookups
-                cursor = db_conn.cursor()
-                cursor.execute('''
-                    CREATE INDEX IF NOT EXISTS chat_sessions_session_id_index ON chat_sessions (session_id)
-                ''')
-                cursor.execute('''
-                    CREATE INDEX IF NOT EXISTS chat_sessions_message_id_index ON chat_sessions (message_id)
-                ''')
-                db_conn.commit()
+        self.vectordb = VectorDB(
+            mongo_uri = mongo_uri,
+            mongo_database = mongo_database,
+            mongo_collection = mongo_collection_vectordb,
+            vector_storage = override_vector_storage,
+            text_storage = override_text_storage
+        )
+        self.semantic_vectors_storage = override_vector_storage
+        self.semantic_texts_storage = override_text_storage
+        self.mongo_database = mongo_database
+        self.mongo_collection_conversation_data = mongo_collection_conversation_data
+        self.mongo_collection_vectordb = mongo_collection_vectordb
+        self.connection = pymongo.MongoClient(mongo_uri)
+        self.conversation_collection = self.connection[mongo_database][mongo_collection_conversation_data]
+        self.semantic_model = EmbeddingModel()
             
-    def store_embeddings(self, sentences, session_id, message_id, type):
+    def store_embeddings(self, sentences: list, session_id: str, message_id: str, type: str):
         unique_ids = [str(uuid.uuid4()) for _ in range(len(sentences))]
-        embeddings = [extract_embeddings(sentence) for sentence in sentences]
+        embeddings = [self.semantic_model.extract_embeddings(sentence) for sentence in sentences]
         metadatas = [
             {
-                'sentence': sentence,
+                'text': sentence,
                 'session_id': session_id,
                 'message_id': message_id,
                 'type': type
@@ -66,58 +59,64 @@ class Memory:
             for sentence in sentences
         ]
 
-        self.vector_db.store_embeddings_batch(unique_ids, embeddings, metadatas)
+        self.vectordb.store_embeddings_batch(
+            unique_ids = unique_ids,
+            embeddings = embeddings,
+            metadata_dicts = metadatas,
+            text_field = 'text'
+        )
 
     def memorize(self, question, answer, session_id=None):
         if session_id is None:
             session_id = str(uuid.uuid4())
 
         question_id = str(uuid.uuid4())
-        question_summary = compress_text(question)
+        question_summary = compress_text(question, target_token_count=300)
 
         answer_id = str(uuid.uuid4())
-        answer_summary = compress_text(answer)
+        answer_summary = compress_text(answer, target_token_count=300)
 
-        with self.lock:
-            with sqlite3.connect(self.sqlite_db_path) as db_conn:
-                cursor = db_conn.cursor()
-                cursor.execute('''
-                    INSERT INTO chat_sessions (session_id, message_id, question, question_summary, timestamp)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (session_id, question_id, question, question_summary, datetime.utcnow()))
+        self.conversation_collection.insert_one({
+            'session_id': session_id,
+            'message_id': question_id,
+            'question': question,
+            'question_summary': question_summary,
+            'timestamp': datetime.datetime.now(datetime.timezone.utc)
+        })
 
-                cursor.execute('''
-                    INSERT INTO chat_sessions (session_id, message_id, answer, answer_summary, timestamp)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (session_id, answer_id, answer, answer_summary, datetime.utcnow()))
+        # Sleep for 10ms so the answer is inserted after the question
+        time.sleep(0.01)
 
-                db_conn.commit()
+        self.conversation_collection.insert_one({
+            'session_id': session_id,
+            'message_id': answer_id,
+            'answer': answer,
+            'answer_summary': answer_summary,
+            'timestamp': datetime.datetime.now(datetime.timezone.utc)
+        })
 
-        # Add the pair to the vector database
-        question_sentences = structurize_text(question_summary)
-        answer_sentences = structurize_text(answer_summary)
-
-        self.store_embeddings(question_sentences, session_id, question_id, 'question')
-        self.store_embeddings(answer_sentences, session_id, answer_id, 'answer')
+        self.store_embeddings([question_summary], session_id, question_id, 'question')
+        self.store_embeddings([answer_summary], session_id, answer_id, 'answer')
 
         return session_id, question_id, answer_id
 
     def get_last_interactions(self, session_id, num_chats=4, recent_first=True):
-        with self.lock:
-            with sqlite3.connect(self.sqlite_db_path) as db_conn:
-                cursor = db_conn.cursor()
-                order = 'DESC' if recent_first else 'ASC'
-                cursor.execute(f'''
-                    SELECT * FROM chat_sessions
-                    WHERE session_id = ?
-                    ORDER BY timestamp {order}
-                    LIMIT ?
-                ''', (session_id, num_chats))
-                chats = cursor.fetchall()
+        chats = list(self.conversation_collection.find(
+            {'session_id': session_id},
+            sort = [('timestamp', -1 if recent_first else 1)],
+            limit = num_chats
+        ))
 
         # Convert to dictionary format
         columns = ['session_id', 'message_id', 'question', 'question_summary', 'answer', 'answer_summary', 'timestamp']
-        return [dict(zip(columns, chat)) for chat in chats]
+
+        # Ensure all items contains all columns, if not, fill with None
+        for chat in chats:
+            for column in columns:
+                if column not in chat:
+                    chat[column] = None
+
+        return chats
 
     def remember(self, session_id, new_prompt, recent_interaction_count = 4):
         """
@@ -128,21 +127,37 @@ class Memory:
         last_n_messages_ids = [ m['message_id'] for m in last_n_messages ]
 
         # Get embeddings for the incoming prompt
-        prompt_embedding = extract_embeddings(new_prompt)
+        prompt_embedding = self.semantic_model.extract_embeddings(new_prompt)
 
         # Search in vector database for the most similar question
         # (Excluding the last "N" messages, as they are fetched directly from the database)
-        _, _, metadatas = self.vector_db.find_most_similar(
-            prompt_embedding,
-            metadata_filter={'session_id': session_id},
-            k = 10
+        _, _, metadatas = self.vectordb.find_most_similar(
+            embedding = prompt_embedding,
+            filters = {'session_id': session_id},
+            output_fields = 'all',
+            k = 30,
+            use_find_one = False
         )
+        if not metadatas:
+            return {
+                "recent_memory": [],
+                "context_memory": [],
+                "suggested_context": ""
+            }
+        
+        ranked_results = rank(
+            query = new_prompt,
+            documents = [ m['text'] for m in metadatas ],
+            top_n = 10
+        )
+        ranked_texts = [ rt[0] for rt in ranked_results ]
+        metadatas = [ m for m in metadatas if m['text'] in ranked_texts ]
         metadatas = [ m for m in metadatas if m['message_id'] not in last_n_messages_ids ][:2]
 
         suggested_context = ""
         if len(metadatas) > 0:
             for metadata in metadatas:
-                suggested_context += f"Previous context ({'prompt' if metadata['type'] == 'question' else 'answer'}): {metadata['sentence']}\n"
+                suggested_context += f"Previous context ({'prompt' if metadata['type'] == 'question' else 'answer'}): {metadata['text']}\n"
 
         suggested_context += "\n"
 
@@ -162,63 +177,34 @@ class Memory:
         }
 
     def delete_session_from_vector_db(self, session_id):
-        ids, _, _ = self.vector_db.find_most_similar(
-            dummy_embedding,
-            metadata_filter={'session_id': session_id},
-            k=9999
-        )
-
-        self.vector_db.delete_embeddings_batch(list(ids))
+        self.vectordb.delete_embeddings_by_metadata({'session_id': session_id})
 
     def delete_message_from_vector_db(self, session_id, message_id):
-        ids, _, _ = self.vector_db.find_most_similar(
-            dummy_embedding,
-            metadata_filter={'session_id': session_id, 'message_id': message_id},
-            k=2
-        )
-
-        # Remove all ids
-        self.vector_db.delete_embeddings_batch(list(ids))
+        self.vectordb.delete_embeddings_by_metadata({'session_id': session_id, 'message_id': message_id})
 
     def forget_session(self, session_id):
-        with self.lock:
-            with sqlite3.connect(self.sqlite_db_path) as db_conn:
-                cursor = db_conn.cursor()
-                cursor.execute('DELETE FROM chat_sessions WHERE session_id = ?', (session_id,))
-                db_conn.commit()
+        self.conversation_collection.delete_many({'session_id': session_id})
 
         # Delete from the vector database
         self.delete_session_from_vector_db(session_id)
     
     def forget_message(self, session_id, message_id):
-        with self.lock:
-            with sqlite3.connect(self.sqlite_db_path) as db_conn:
-                cursor = db_conn.cursor()
-                cursor.execute('DELETE FROM chat_sessions WHERE session_id = ? AND message_id = ?', (session_id, message_id))
-                db_conn.commit()
+        self.conversation_collection.delete_one({'session_id': session_id, 'message_id': message_id})
 
         # Delete from the vector database
         self.delete_message_from_vector_db(session_id, message_id)
 
     def list_messages(self, session_id, count = False, page = 1, limit = 20, recent_first = True):
-        with self.lock:
-            with sqlite3.connect(self.sqlite_db_path) as db_conn:
-                cursor = db_conn.cursor()
-        
-                if count:
-                    cursor.execute('SELECT COUNT(*) FROM chat_sessions WHERE session_id = ?', (session_id,))
-                    return cursor.fetchone()[0]
-                else:
-                    offset = (page - 1) * limit
-                    order = 'DESC' if recent_first else 'ASC'
-                    cursor.execute(f'''
-                        SELECT * FROM chat_sessions
-                        WHERE session_id = ?
-                        ORDER BY timestamp {order}
-                        LIMIT ? OFFSET ?
-                    ''', (session_id, limit, offset))
-                    messages = cursor.fetchall()
+        if count:
+            return self.conversation_collection.count_documents({'session_id': session_id})
+        else:
+            offset = (page - 1) * limit
+            order = -1 if recent_first else 1
+            messages = list(self.conversation_collection.find(
+                {'session_id': session_id},
+                sort = [('timestamp', order)],
+                limit = limit,
+                skip = offset
+            ))
 
-                    # Convert to dictionary format
-                    columns = ['session_id', 'message_id', 'question', 'question_summary', 'answer', 'answer_summary', 'timestamp']
-                    return [dict(zip(columns, message)) for message in messages]
+            return messages

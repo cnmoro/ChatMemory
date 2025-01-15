@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0", "minivectordb>=2.2.1", "logzero", "numpy<2", "nltk", "scikit-learn", "tiktoken", "fasttext"]
+requires = ["setuptools>=61.0", "semantic-compressor", "minivectordb-simple", "numpy", "lmdb", "msgpack", "pymongo", "nanoranker"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "chatmemorydb"
-version = "1.3"
+name = "chatmemorydb-lmdb"
+version = "1.0"
 authors = [
   { name="Carlo Moro", email="cnmoro@gmail.com" },
 ]
@@ -17,13 +17,13 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "minivectordb>=2.2.1",
-    "logzero",
-    "numpy<2",
-    "nltk",
-    "scikit-learn",
-    "tiktoken",
-    "fasttext"
+  "semantic-compressor",
+  "minivectordb-simple",
+  "numpy",
+  "lmdb",
+  "msgpack",
+  "pymongo",
+  "nanoranker"
 ]
 
 [project.urls]

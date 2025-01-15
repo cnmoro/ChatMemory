@@ -1,36 +1,36 @@
-from memory.embeddings import extract_embeddings
-from memory.compression import compress_text
+from memory.lmdb_vector_mapping import LmdbStorage, MemmapStorage
 from contextlib import contextmanager
 from memory.brain import Memory
-import shutil, os, numpy as np
+import uuid, os, shutil
 
 @contextmanager
 def get_memory_object():
-    memory = Memory()
+    random_uuid = str(uuid.uuid4())
+
+    semantic_vectors_storage = MemmapStorage(f"{random_uuid}_mem_vector_storage")
+    semantic_texts_storage = LmdbStorage(f"{random_uuid}_mem_text_storage")
+
+    memory = Memory(
+        mongo_uri = "mongodb://localhost:27017/",
+        mongo_database = "memory_db_test",
+        mongo_collection_vectordb = "memory_collection_test",
+        mongo_collection_conversation_data = "conversation_collection_test",
+        override_vector_storage = semantic_vectors_storage,
+        override_text_storage = semantic_texts_storage
+    )
     yield memory
 
-    # Remove the created files and folders
-    if os.path.exists(memory.sqlite_db_path):
-        # Delete the file
-        os.remove(memory.sqlite_db_path)
+    for file in os.listdir('.'):
+        if random_uuid in file:
+            if os.path.isfile(file):
+                os.remove(file)
+            else:
+                # Force remove even if not empty
+                shutil.rmtree(file)
 
-    if os.path.exists(memory.vector_db_storage_folder_location):
-        # Delete the folder
-        shutil.rmtree(memory.vector_db_storage_folder_location)
+    memory.connection.drop_database(memory.mongo_database)
     
     del memory
-
-# Test for summarization functionality
-def test_summarize():
-    original_text = "This is a test sentence for summarization."
-    summary = compress_text(original_text)
-    assert isinstance(summary, str)
-    assert original_text == summary
-
-    big_text = original_text * 100
-    summary = compress_text(big_text)
-    assert isinstance(summary, str)
-    assert len(summary) < len(big_text)
 
 # Test for memorize and retrieval of interactions
 def test_memorize_and_retrieve():
@@ -46,12 +46,6 @@ def test_memorize_and_retrieve():
         # Answer comes first, because it is the most recent
         assert interactions[0]['answer'] == "Test answer"
         assert interactions[1]['question'] == "Test question"
-
-# Test for embedding extraction
-def test_extract_embeddings():
-    with get_memory_object() as memory:
-        embedding = extract_embeddings("This is a test sentence.")
-        assert isinstance(embedding, list) or isinstance(embedding, np.ndarray)
 
 # Test forgetting a session
 def test_forget_session():
@@ -172,4 +166,3 @@ def test_multiple_sessions_ensure_no_interference():
         assert 'italy' not in retrieved_memory['suggested_context'].lower()
         assert 'france' not in retrieved_memory['suggested_context'].lower()
         assert 'spain' not in retrieved_memory['suggested_context'].lower()
-        
