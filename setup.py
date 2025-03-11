@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='chatmemorydb-lmdb',
-    version='1.0',
+    name='chatmemorydb-lmdb-onnx',
+    version='1.2',
     author='Carlo Moro',
     author_email='cnmoro@gmail.com',
     description="Memory",
@@ -10,13 +10,13 @@ setup(
     package_data={},
     include_package_data=True,
     install_requires=[
-        "semantic-compressor",
-        "minivectordb-simple",
         "numpy",
         "lmdb",
         "msgpack",
         "pymongo",
-        "nanoranker"
+        "onnxruntime",
+        "onnxruntime_extensions",
+        "faiss-cpu"
     ],
     classifiers=[
         'Programming Language :: Python :: 3',

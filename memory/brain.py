@@ -1,9 +1,7 @@
 from memory.lmdb_vector_mapping import LmdbStorage, MemmapStorage
-from minivectordb.embedding_model import EmbeddingModel
-from compressor.semantic import compress_text
+from memory.embeddings import get_onnx_embeddings
 import uuid, pymongo, time, datetime, signal
 from memory.vector_database import VectorDB
-from nanoranker import rank
 
 class Memory:
     def __init__(
@@ -44,11 +42,10 @@ class Memory:
         self.mongo_collection_vectordb = mongo_collection_vectordb
         self.connection = pymongo.MongoClient(mongo_uri)
         self.conversation_collection = self.connection[mongo_database][mongo_collection_conversation_data]
-        self.semantic_model = EmbeddingModel()
             
     def store_embeddings(self, sentences: list, session_id: str, message_id: str, type: str):
         unique_ids = [str(uuid.uuid4()) for _ in range(len(sentences))]
-        embeddings = [self.semantic_model.extract_embeddings(sentence) for sentence in sentences]
+        embeddings = get_onnx_embeddings(sentences)
         metadatas = [
             {
                 'text': sentence,
@@ -71,16 +68,13 @@ class Memory:
             session_id = str(uuid.uuid4())
 
         question_id = str(uuid.uuid4())
-        question_summary = compress_text(question, target_token_count=300)
 
         answer_id = str(uuid.uuid4())
-        answer_summary = compress_text(answer, target_token_count=300)
 
         self.conversation_collection.insert_one({
             'session_id': session_id,
             'message_id': question_id,
             'question': question,
-            'question_summary': question_summary,
             'timestamp': datetime.datetime.now(datetime.timezone.utc)
         })
 
@@ -91,12 +85,11 @@ class Memory:
             'session_id': session_id,
             'message_id': answer_id,
             'answer': answer,
-            'answer_summary': answer_summary,
             'timestamp': datetime.datetime.now(datetime.timezone.utc)
         })
 
-        self.store_embeddings([question_summary], session_id, question_id, 'question')
-        self.store_embeddings([answer_summary], session_id, answer_id, 'answer')
+        self.store_embeddings([question], session_id, question_id, 'question')
+        self.store_embeddings([answer], session_id, answer_id, 'answer')
 
         return session_id, question_id, answer_id
 
@@ -108,7 +101,7 @@ class Memory:
         ))
 
         # Convert to dictionary format
-        columns = ['session_id', 'message_id', 'question', 'question_summary', 'answer', 'answer_summary', 'timestamp']
+        columns = ['session_id', 'message_id', 'question', 'answer', 'timestamp']
 
         # Ensure all items contains all columns, if not, fill with None
         for chat in chats:
@@ -127,7 +120,7 @@ class Memory:
         last_n_messages_ids = [ m['message_id'] for m in last_n_messages ]
 
         # Get embeddings for the incoming prompt
-        prompt_embedding = self.semantic_model.extract_embeddings(new_prompt)
+        prompt_embedding = get_onnx_embeddings([new_prompt])[0]
 
         # Search in vector database for the most similar question
         # (Excluding the last "N" messages, as they are fetched directly from the database)
@@ -145,13 +138,6 @@ class Memory:
                 "suggested_context": ""
             }
         
-        ranked_results = rank(
-            query = new_prompt,
-            documents = [ m['text'] for m in metadatas ],
-            top_n = 10
-        )
-        ranked_texts = [ rt[0] for rt in ranked_results ]
-        metadatas = [ m for m in metadatas if m['text'] in ranked_texts ]
         metadatas = [ m for m in metadatas if m['message_id'] not in last_n_messages_ids ][:2]
 
         suggested_context = ""
@@ -165,9 +151,9 @@ class Memory:
             last_n_messages.reverse()
             for message in last_n_messages:
                 if 'question' in message and bool(message['question']):
-                    suggested_context += f"Previous prompt: {message['question_summary']}\n"
+                    suggested_context += f"Previous prompt: {message['question']}\n"
                 else:
-                    suggested_context += f"Previous answer: {message['answer_summary']}\n"
+                    suggested_context += f"Previous answer: {message['answer']}\n"
         
         # Return the context metadata
         return {

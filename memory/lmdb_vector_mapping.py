@@ -1,4 +1,4 @@
-import msgpack, struct, signal, lmdb, time, os
+import msgpack, struct, lmdb, time, os, atexit
 import numpy as np
 
 def timeit(func):
@@ -13,6 +13,7 @@ def timeit(func):
 class LmdbStorage:
     def __init__(self, path, map_size=70*1024*1024*1024): # 70GB by default
         self.env = lmdb.open(path, map_size=map_size)
+        atexit.register(self.close)
 
     def _int_to_bytes(self, x):
         return struct.pack('<q', x)

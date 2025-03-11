@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0", "semantic-compressor", "minivectordb-simple", "numpy", "lmdb", "msgpack", "pymongo", "nanoranker"]
+requires = ["setuptools>=61.0", "numpy", "lmdb", "msgpack", "pymongo", "onnxruntime", "onnxruntime_extensions"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "chatmemorydb-lmdb"
-version = "1.0"
+name = "chatmemorydb-lmdb-onnx"
+version = "1.2"
 authors = [
   { name="Carlo Moro", email="cnmoro@gmail.com" },
 ]
@@ -17,13 +17,13 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-  "semantic-compressor",
-  "minivectordb-simple",
   "numpy",
   "lmdb",
   "msgpack",
   "pymongo",
-  "nanoranker"
+  "onnxruntime",
+  "onnxruntime_extensions",
+  "faiss-cpu"
 ]
 
 [project.urls]

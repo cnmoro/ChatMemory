@@ -1,7 +1,7 @@
-semantic-compressor
-minivectordb-simple
 numpy
 lmdb
 msgpack
 pymongo
-nanoranker
+onnxruntime
+onnxruntime_extensions
+faiss-cpu
